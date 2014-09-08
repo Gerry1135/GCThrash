@@ -28,7 +28,6 @@ namespace GCThrash
         private List<Dummy> list;
 
         private bool enableThrash = false;
-        private float numBlocksExp = 0f;
         private Int32 numBlocks = 1;
 
         private Boolean _Visible = false;
@@ -52,8 +51,8 @@ namespace GCThrash
         {
             InitStyles();
 
-            WindowTitle = "GCThrash (0.1.0.0)";
-            WindowRect = new Rect(300, 200, 200, 50);
+            WindowTitle = "GCThrash (0.1.0.1)";
+            WindowRect = new Rect(300, 200, 250, 50);
             WindowID = Guid.NewGuid().GetHashCode();
 
             list = new List<Dummy>();
@@ -95,8 +94,7 @@ namespace GCThrash
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            numBlocksExp = GUILayout.HorizontalSlider(numBlocksExp, 0, 20.0f);
-            numBlocks = (Int32)Math.Pow(2d, numBlocksExp);
+            numBlocks = (Int32)GUILayout.HorizontalSlider(numBlocks, 0f, 1000000f);
             GUILayout.Label(numBlocks.ToString("0"), dataStyle, GUILayout.Width(60));
             GUILayout.EndHorizontal();
 
