@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -7,16 +9,27 @@ namespace GCThrash
 {
     public class Dummy
     {
-        private Int32 num;
-        public Dummy(Int32 i)
+        private int value;
+        private Dummy objRef;
+
+        public Dummy(int val)
         {
-            num = i;
+            value = val;
+            objRef = null;
+        }
+
+        public Dummy GetChildObject()
+        {
+            return objRef;
         }
     }
     
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class Garbage : MonoBehaviour
     {
+        private const float MaxBlocks = 100000f;
+        private const int NumLists = 10;
+
         private Int32 WindowID;
         private String WindowTitle;
         private Rect WindowRect;
@@ -25,7 +38,8 @@ namespace GCThrash
         private GUIStyle labelStyle;
         private GUIStyle dataStyle;
         private GUIStyle buttonStyle;
-        private List<Dummy> list;
+        private List<Dummy>[] lists;
+        private Stopwatch timer;
 
         private bool enableThrash = false;
         private Int32 numBlocks = 1;
@@ -51,11 +65,17 @@ namespace GCThrash
         {
             InitStyles();
 
-            WindowTitle = "GCThrash (0.1.0.1)";
+            WindowTitle = "GCThrash (0.2.0.0)";
             WindowRect = new Rect(300, 200, 250, 50);
             WindowID = Guid.NewGuid().GetHashCode();
 
-            list = new List<Dummy>();
+            // Create an array of lists to hold our garbage
+            lists = new List<Dummy>[NumLists];
+            for (int i = 0; i < NumLists; i++)
+                lists[i] = new List<Dummy>();
+
+            timer = new Stopwatch();
+            timer.Start();
         }
 
         public void Start()
@@ -65,14 +85,29 @@ namespace GCThrash
 
         public void Update()
         {
-            list.Clear();
+            if (timer.ElapsedMilliseconds > 1000)
+            {
+                // Timer has run for over 1 second
+
+                // Restart the timer
+                timer.Reset();
+                timer.Start();
+
+                // Move the lists in the array down one element
+                // lists[0] will be collected
+                for (int i = 0; i < (NumLists - 1); i++)
+                    lists[i] = lists[i + 1];
+
+                // Create a new list at the end of the array
+                lists[NumLists - 1] = new List<Dummy>();
+            }
 
             if (enableThrash)
             {
-                // Do the garbage thrash
+                // Thrash is enabled so allocate new objects and stick each one in a random list in the array
                 for (Int32 i = 0; i < numBlocks; i++)
                 {
-                    list.Add(new Dummy(i));
+                    lists[UnityEngine.Random.Range(0, NumLists)].Add(new Dummy(i));
                 }
             }
         }
@@ -84,6 +119,7 @@ namespace GCThrash
                 WindowRect = GUILayout.Window(WindowID, WindowRect, Window, WindowTitle, windowStyle);
             }
         }
+
         private void Window(int windowID)
         {
             GUILayout.BeginVertical(areaStyle);
@@ -94,7 +130,7 @@ namespace GCThrash
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            numBlocks = (Int32)GUILayout.HorizontalSlider(numBlocks, 0f, 1000000f);
+            numBlocks = (Int32)GUILayout.HorizontalSlider(numBlocks, 1f, MaxBlocks);
             GUILayout.Label(numBlocks.ToString("0"), dataStyle, GUILayout.Width(60));
             GUILayout.EndHorizontal();
 
