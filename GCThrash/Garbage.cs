@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -30,6 +29,10 @@ namespace GCThrash
         private const float MaxBlocks = 100000f;
         private const int NumLists = 10;
 
+        private static Rect stWindowRect = new Rect(300, 200, 250, 50);
+        private static bool stEnableThrash = false;
+        private static Int32 stNumBlocks = 1;
+
         private Int32 WindowID;
         private String WindowTitle;
         private Rect WindowRect;
@@ -44,30 +47,16 @@ namespace GCThrash
         private bool enableThrash = false;
         private Int32 numBlocks = 1;
 
-        private Boolean _Visible = false;
-        private Boolean Visible
-        {
-            get { return _Visible; }
-            set
-            {
-                if (_Visible != value)
-                {
-                    if (value)
-                        RenderingManager.AddToPostDrawQueue(5, DoPostDraw);
-                    else
-                        RenderingManager.RemoveFromPostDrawQueue(5, DoPostDraw);
-                }
-                _Visible = value;
-            }
-        }
-
         public void Awake()
         {
             InitStyles();
 
-            WindowTitle = "GCThrash (0.2.0.0)";
-            WindowRect = new Rect(300, 200, 250, 50);
+            WindowTitle = "GCThrash (0.2.0.2)";
             WindowID = Guid.NewGuid().GetHashCode();
+
+            WindowRect = stWindowRect;
+            enableThrash = stEnableThrash;
+            numBlocks = stNumBlocks;
 
             // Create an array of lists to hold our garbage
             lists = new List<Dummy>[NumLists];
@@ -80,7 +69,16 @@ namespace GCThrash
 
         public void Start()
         {
-            Visible = true;
+            RenderingManager.AddToPostDrawQueue(5, DoPostDraw);
+        }
+
+        public void OnDestroy()
+        {
+            RenderingManager.RemoveFromPostDrawQueue(5, DoPostDraw);
+
+            stWindowRect = WindowRect;
+            stEnableThrash = enableThrash;
+            stNumBlocks = numBlocks;
         }
 
         public void Update()
@@ -114,10 +112,7 @@ namespace GCThrash
 
         private void DoPostDraw()
         {
-            if (Visible)
-            {
-                WindowRect = GUILayout.Window(WindowID, WindowRect, Window, WindowTitle, windowStyle);
-            }
+            WindowRect = GUILayout.Window(WindowID, WindowRect, Window, WindowTitle, windowStyle);
         }
 
         private void Window(int windowID)
